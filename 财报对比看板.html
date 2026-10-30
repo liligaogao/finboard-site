@@ -559,6 +559,10 @@ tbody tr.total-row:hover td { background: var(--surface-2); }
 .dupont-factor { font-size: 15px; font-weight: 600; }
 .dupont-operator { color: var(--faint); font-size: 12px; }
 .dupont-roe { font-size: 17px; font-weight: 700; color: var(--brand); }
+.dupont-check {
+  display: block; font-size: 10.5px; font-weight: 500; color: var(--faint);
+  margin-top: 2px; font-variant-numeric: tabular-nums; letter-spacing: 0.01em;
+}
 .dupont-bar { height: 6px; background: #eef2f7; border-radius: 3px; overflow: hidden; }
 .dupont-bar i { display: block; height: 100%; background: var(--brand); border-radius: 3px; }
 
@@ -2029,13 +2033,26 @@ footer a:hover { text-decoration: underline; }
       .map(({ company, row }) => {
         const roe = row.roe;
         const width = roe == null ? 0 : clamp((roe / maxRoe) * 100, 2, 100);
+        // 用"显示出来的三个数"再乘一遍，直接标在 ROE 下面 ——
+        // 读者不必自己按计算器，也就不会因为看错一位数而怀疑整张表。
+        const shownProduct =
+          row.net_margin == null || row.asset_turnover == null || row.equity_multiplier == null
+            ? null
+            : Number(row.net_margin.toFixed(4)) *
+              Number(row.asset_turnover.toFixed(5)) *
+              Number(row.equity_multiplier.toFixed(5));
+        const matches = shownProduct != null && roe != null && Math.abs(shownProduct - roe) < 0.005;
+        const checkLine =
+          shownProduct == null
+            ? ""
+            : `<span class="dupont-check">相乘 ${shownProduct.toFixed(2)}% ${matches ? "✓" : "≠"}</span>`;
         return `
         <div class="dupont-row">
           <div class="dupont-cell"><b>${esc(company.name)}</b></div>
           <div class="dupont-cell dupont-factor">${pct4(row.net_margin)}</div>
           <div class="dupont-cell dupont-factor">${times5(row.asset_turnover)}</div>
           <div class="dupont-cell dupont-factor">${times5(row.equity_multiplier)}</div>
-          <div class="dupont-cell"><span class="dupont-roe">${fmtValue(roe, "pct")}</span></div>
+          <div class="dupont-cell"><span class="dupont-roe">${fmtValue(roe, "pct")}</span>${checkLine}</div>
           <div class="dupont-cell dupont-bar-cell">
             <div class="dupont-bar"><i style="width:${width}%;background:${company.color}"></i></div>
           </div>
