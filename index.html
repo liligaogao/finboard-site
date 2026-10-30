@@ -687,7 +687,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>公司概览</h2>
-      <span class="section-note">数字随上方年度切换；右侧迷你线为 2021–2025 营业总收入走势</span>
+      <span class="section-note">数字随年度切换；右侧迷你线是五年营收走势</span>
     </div>
     <div class="grid grid-companies" id="company-cards"></div>
   </section>
@@ -695,10 +695,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>本期异常</h2>
-      <span class="section-note">
-        自动找出<b>最不像同行</b>的几项：偏离度 = ｜本期值 − 行业中位数｜ ÷ 该指标本期的稳健离散度（MAD）。
-        数字越大越异常，不带主观判断 —— 异常不等于坏，只代表值得看一眼
-      </span>
+      <span class="section-note">自动找最偏离同行的一项；异常不等于坏</span>
     </div>
     <div class="card" id="outliers"></div>
   </section>
@@ -706,9 +703,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>年度观察</h2>
-      <span class="section-note">
-        每年年报季后写一封，<b>定稿不改</b> —— 记下当时怎么想，包括错的部分。
-        最新一期：<span id="letter-meta"></span>
+      <span class="section-note">每年年报季后写一封，定稿不改；最新：<span id="letter-meta"></span></span>
       </span>
     </div>
     <div class="card letter" id="letter"></div>
@@ -717,7 +712,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>规模与增长</h2>
-      <span class="section-note">营业总收入按年度分组对比，右图为同期增速</span>
+      <span class="section-note">营收按年度分组对比，右图是同期增速</span>
     </div>
     <div class="grid grid-2">
       <div class="card chart-card">
@@ -741,7 +736,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>增长质量</h2>
-      <span class="section-note">前三张是「增速差」＝资产项增速 − 营收增速（<b>红色＝跑在收入前面</b>，绿色＝落后）；第四张是经营占款占营收比重，<b>越高说明越会“用别人的钱做生意”</b></span>
+      <span class="section-note">增速差 = 资产项增速 − 营收增速；红色＝跑在收入前面</span>
     </div>
     <div class="grid grid-2">
       <div class="card chart-card">
@@ -768,7 +763,7 @@ footer a:hover { text-decoration: underline; }
       <div class="card chart-card">
         <div class="chart-head">
           <h3 class="chart-title">经营占款 / 营业收入</h3>
-          <span class="chart-hint">（应付+合同负债）−（应收+存货）÷ 营收</span>
+          <span class="chart-hint">越高＝越会用上游和客户的钱</span>
         </div>
         <div class="chart-box" id="gap-float"></div>
       </div>
@@ -778,7 +773,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>季度视图（TTM）</h2>
-      <span class="section-note">滚动 12 个月口径，避开季节性；单季同比是同季对同季。<b>数据截至最新已披露季报</b></span>
+      <span class="section-note">滚动 12 个月避开季节性；单季同比为同季对比</span>
     </div>
     <div class="grid grid-3">
       <div class="card chart-card">
@@ -813,7 +808,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>盈利能力与经营质量</h2>
-      <span class="section-note">全部指标由三大报表原始科目自行推导，口径见页面底部；<b>灰虚线＝8 家中位数</b>（在中位之上还是之下，比绝对数更能说明问题）</span>
+      <span class="section-note">灰虚线是 8 家中位数；指标均由报表原始科目自算</span>
     </div>
     <div class="legend trend-legend" id="legend-trend"></div>
     <div class="grid grid-trend" id="trend-grid"></div>
@@ -822,7 +817,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>杜邦分解</h2>
-      <span class="section-note">ROE = 归母净利率 × 总资产周转率 × 权益乘数（归母口径）。分项精度按<b>能手算闭合</b>取：把三个数乘起来，四舍五入后与 ROE 一致（40 行全部闭合，误差 &lt; 0.005pp）</span>
+      <span class="section-note">ROE 三因子相乘；分项精度按能手算闭合取</span>
     </div>
     <div class="card dupont" id="dupont"></div>
     <div class="grid grid-2" style="margin-top:14px">
@@ -836,7 +831,7 @@ footer a:hover { text-decoration: underline; }
       <div class="card chart-card">
         <div class="chart-head">
           <h3 class="chart-title">权益乘数 · 五年</h3>
-          <span class="chart-hint">借了多少：平均总资产 ÷ 平均归母净资产</span>
+          <span class="chart-hint">借了多少：总资产 ÷ 归母净资产</span>
         </div>
         <div class="chart-box" id="dupont-leverage"></div>
       </div>
@@ -850,10 +845,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>偿债能力（有息负债）</h2>
-      <span class="section-note">
-        资产负债率 70% 不等于「欠了一堆要付利息的钱」——这里只算<b>真有息的负债</b>：
-        短期借款 + 一年内到期非流动负债 + 长期借款 + 应付债券
-      </span>
+      <span class="section-note">只算要付利息的负债：借款、到期、债券</span>
     </div>
     <div class="grid grid-2">
       <div class="card chart-card">
@@ -866,7 +858,7 @@ footer a:hover { text-decoration: underline; }
       <div class="card chart-card">
         <div class="chart-head">
           <h3 class="chart-title">利息保障倍数</h3>
-          <span class="chart-hint">EBIT ÷ 利息费用，低于 1 说明利润盖不住利息</span>
+          <span class="chart-hint">低于 1 说明利息都盖不住</span>
         </div>
         <div class="chart-box" id="debt-cover"></div>
       </div>
@@ -881,10 +873,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>估值</h2>
-      <span class="section-note">
-        市值取所选年度<b>最后一个交易日的真实总市值</b>，分母用当年年报口径自算；
-        <b>亏损年份 PE 显示「—」</b>（负 PE 不代表便宜），改看市销率 PS
-      </span>
+      <span class="section-note">市值取年末真实总市值；亏损年份 PE 显示「—」</span>
     </div>
     <div class="grid grid-2">
       <div class="card chart-card">
@@ -912,9 +901,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>判断记录</h2>
-      <span class="section-note">
-        作者从这个看板读出了什么，以及事后回看 —— <b>判断错了也留着</b>，那才是它真正有用的地方
-      </span>
+      <span class="section-note">作者读出了什么，以及事后回看；错了也留着</span>
     </div>
     <div class="card" id="judgments"></div>
   </section>
@@ -922,7 +909,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>指标明细</h2>
-      <span class="section-note">横向看同一年度的差距，纵向看单指标的五年轨迹</span>
+      <span class="section-note">横向看年度差距，纵向看五年轨迹</span>
     </div>
     <div class="card">
       <div class="tabs">
@@ -945,7 +932,7 @@ footer a:hover { text-decoration: underline; }
   <section>
     <div class="section-head">
       <h2>数据质量与口径</h2>
-      <span class="section-note">自己算的指标，能不能对上公开披露的指标——这是财报数据产品的底线</span>
+      <span class="section-note">自算指标能否对上披露值——这是底线</span>
     </div>
     <div class="card quality" id="quality"></div>
     <div class="card" style="margin-top:14px;padding:14px 18px 16px">
