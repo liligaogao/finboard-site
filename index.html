@@ -343,6 +343,21 @@ section { margin-bottom: 30px; }
   .hero-hook-text { font-size: 12.5px; }
 }
 
+/* ---------- 指标定义弹窗 ---------- */
+.metric-name.is-clickable { cursor: pointer; border-bottom: 1px dotted var(--line); }
+.metric-name.is-clickable:hover { color: var(--brand); border-bottom-color: var(--brand); }
+th[data-metric] { cursor: pointer; }
+th[data-metric]:hover { color: var(--brand); text-decoration: underline dotted; }
+.metric-pop {
+  position: fixed; z-index: 60; padding: 12px 14px;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 18px 40px -24px rgba(15, 27, 45, .55);
+}
+.metric-pop-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.metric-pop-head b { font-size: 13px; color: var(--ink); }
+.metric-pop-unit { font-size: 11px; color: var(--faint); }
+.metric-pop p { margin: 0; font-size: 12px; line-height: 1.75; color: var(--ink-2); }
+
 /* ---------- 口径说明（折叠） ---------- */
 .notes { padding-left: 0; list-style: none; }
 .note-item { border-bottom: 1px solid var(--line); }
@@ -2140,8 +2155,7 @@ footer a:hover { text-decoration: underline; }
     drawHBars($("#profit-finance"), financeItems, { label: "财务费用率", suffix: "%" });
 
     const head = `<tr>
-      <th>公司</th><th>毛利率</th><th>销售费用率</th><th>管理费用率</th><th>研发费用率</th>
-      <th>财务费用率</th><th>合资收益/营收</th><th>净利率</th>
+      <th>公司</th><th data-metric="gross_margin">毛利率</th><th data-metric="selling_ratio">销售费用率</th><th data-metric="manage_ratio">管理费用率</th><th data-metric="rd_ratio">研发费用率</th><th data-metric="finance_ratio">财务费用率</th><th data-metric="joint_income_ratio">合资收益/营收</th><th data-metric="net_margin">净利率</th>
     </tr>`;
     const body = companies
       .map((c) => {
@@ -2200,8 +2214,7 @@ footer a:hover { text-decoration: underline; }
     drawHBars($("#debt-cover"), coverItems, { label: "利息保障倍数", suffix: " 倍" });
 
     const head = `<tr>
-      <th>公司</th><th>资产负债率</th><th>有息负债率</th><th>有息负债</th><th>净有息负债</th>
-      <th>利息费用</th><th>利息保障倍数</th><th>净负债 / EBITDA</th>
+      <th>公司</th><th data-metric="debt_ratio">资产负债率</th><th data-metric="interest_bearing_debt_ratio">有息负债率</th><th data-metric="interest_bearing_debt">有息负债</th><th data-metric="net_interest_bearing_debt">净有息负债</th><th data-metric="interest_expense">利息费用</th><th data-metric="interest_coverage">利息保障倍数</th><th data-metric="net_debt_to_ebitda">净负债 / EBITDA</th>
     </tr>`;
     const body = companies
       .map((c) => {
@@ -2410,7 +2423,7 @@ footer a:hover { text-decoration: underline; }
           .join("");
 
         return `<tr>
-          <td><span class="metric-name">${esc(meta.name)}</span><span class="metric-unit">${esc(unitLabel(meta))}</span></td>
+          <td><span class="metric-name is-clickable" data-metric="${esc(key)}" role="button" tabindex="0">${esc(meta.name)}</span><span class="metric-unit">${esc(unitLabel(meta))}</span></td>
           ${cells}
           <td class="dim">${fmtValue(medianOfAll, meta.kind)}</td>
           <td class="dim">${fmtValue(spread, meta.kind)}</td>
@@ -2794,7 +2807,62 @@ footer a:hover { text-decoration: underline; }
     }
   }
 
-/* ---------------- 板块导航 ---------------- */
+  /* ---------------- 指标定义弹窗 ---------------- */
+
+  let metricPop = null;
+
+  function closeMetricPop() {
+    if (metricPop) {
+      metricPop.remove();
+      metricPop = null;
+    }
+  }
+
+  function showMetricPop(anchor) {
+    const key = anchor.getAttribute("data-metric");
+    const meta = key && DATA.metrics[key];
+    if (!meta) return;
+    closeMetricPop();
+
+    const box = document.createElement("div");
+    box.className = "metric-pop";
+    box.innerHTML = `<div class="metric-pop-head"><b>${esc(meta.name)}</b><span class="metric-pop-unit">${esc(
+      meta.unit || ""
+    )}</span></div><p>${esc(meta.desc || "暂无说明")}</p>`;
+    document.body.appendChild(box);
+    metricPop = box;
+
+    const rect = anchor.getBoundingClientRect();
+    const width = Math.min(300, window.innerWidth - 24);
+    box.style.width = `${width}px`;
+    const left = Math.min(Math.max(12, rect.left), window.innerWidth - width - 12);
+    let top = rect.bottom + 8;
+    if (top + box.offsetHeight > window.innerHeight - 12) top = Math.max(12, rect.top - box.offsetHeight - 8);
+    box.style.left = `${left}px`;
+    box.style.top = `${top}px`;
+  }
+
+  function bindMetricPop() {
+    document.addEventListener("click", (event) => {
+      const anchor = event.target.closest("[data-metric]");
+      if (anchor) {
+        event.preventDefault();
+        showMetricPop(anchor);
+        return;
+      }
+      if (!event.target.closest(".metric-pop")) closeMetricPop();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeMetricPop();
+      if ((event.key === "Enter" || event.key === " ") && event.target.matches("[data-metric]")) {
+        event.preventDefault();
+        showMetricPop(event.target);
+      }
+    });
+    window.addEventListener("scroll", closeMetricPop, { passive: true });
+  }
+
+  /* ---------------- 板块导航 ---------------- */
 
   function buildToc() {
     const sections = Array.from(document.querySelectorAll("main > section")).filter((item) =>
@@ -3051,6 +3119,7 @@ footer a:hover { text-decoration: underline; }
     renderLetter();
     renderJudgments();
     buildToc();
+    bindMetricPop();
     bindZoom();
 
     document.querySelectorAll("[data-tab]").forEach((button) => {
