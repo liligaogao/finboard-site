@@ -4,13 +4,13 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>财报对比看板 · A股乘用车整车 2021–2025</title>
-<meta name="description" content="基于公开年报的 A 股乘用车整车财务对比看板：八家车企五年数据，33 项指标全部由三大报表原始科目推导，并用公开披露值逐条勾稽（226 条硬校验全部通过）。" />
+<meta name="description" content="基于公开年报的 A 股乘用车整车财务对比看板：八家车企五年数据，39 项指标全部由三大报表原始科目推导，并用公开披露值逐条勾稽（226 条硬校验全部通过）。" />
 
 <!-- 分享预览卡片：微信/飞书/邮件里贴链接时会显示标题和缩略图 -->
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="财报对比看板" />
 <meta property="og:title" content="A股乘用车整车 · 财报对比看板（2021–2025）" />
-<meta property="og:description" content="八家车企五年年报：33 项指标由三大报表原始科目自行推导，226 条勾稽校验全部通过。比亚迪、长城、长安、上汽、广汽、赛力斯、江淮、北汽蓝谷。" />
+<meta property="og:description" content="八家车企五年年报：39 项指标由三大报表原始科目自行推导，226 条勾稽校验全部通过。比亚迪、长城、长安、上汽、广汽、赛力斯、江淮、北汽蓝谷。" />
 <meta property="og:image" content="https://liligaogao.github.io/finboard-site/preview.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <style>
@@ -321,6 +321,59 @@ section { margin-bottom: 30px; }
   .chart-hint { width: 100%; text-align: left; margin-top: 2px; }
   .section-head { flex-direction: column; align-items: flex-start; gap: 4px; }
   .section-note { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+}
+
+/* ---------- 板块导航 ---------- */
+.toc {
+  position: fixed; right: 8px; top: 50%; transform: translateY(-50%);
+  display: none; flex-direction: column; gap: 1px; z-index: 30;
+  padding: 9px 7px; border-radius: 10px;
+  background: rgba(255, 255, 255, .88);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 12px 30px -22px rgba(15, 27, 45, .6);
+}
+@media (min-width: 1440px) { .toc { display: flex; } }
+.toc a {
+  font-size: 11px; line-height: 1.5; color: var(--muted); text-decoration: none;
+  padding: 3px 7px; border-radius: 5px; border-left: 2px solid transparent; white-space: nowrap;
+}
+.toc a:hover { color: var(--ink); background: #f1f5f9; }
+.toc a.is-active { color: var(--brand); border-left-color: var(--brand); background: #eef4ff; font-weight: 600; }
+
+.toc-fab, .toc-sheet { display: none; }
+@media (max-width: 1439px) {
+  .toc-fab {
+    display: block; position: fixed; right: 14px; bottom: 18px; z-index: 31;
+    padding: 9px 15px; border-radius: 999px; border: 1px solid var(--line);
+    background: #fff; color: var(--ink); font-size: 12.5px; font-weight: 600;
+    box-shadow: 0 10px 26px -14px rgba(15, 27, 45, .55); cursor: pointer;
+  }
+  .toc-fab.is-open { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .toc-sheet {
+    display: block; position: fixed; inset: 0; z-index: 32;
+    background: rgba(15, 27, 45, .38);
+  }
+  .toc-sheet[hidden] { display: none; }
+  .toc-sheet-inner {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    max-height: 70vh; overflow-y: auto;
+    background: #fff; border-radius: 16px 16px 0 0;
+    padding: 14px 16px 24px; display: flex; flex-direction: column;
+  }
+  .toc-sheet-head {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; font-weight: 650; color: var(--ink); margin-bottom: 6px;
+  }
+  .toc-close {
+    border: 0; background: none; font-size: 22px; line-height: 1;
+    color: var(--muted); cursor: pointer; padding: 0 4px;
+  }
+  .toc-sheet a {
+    padding: 10px 2px; font-size: 13.5px; color: var(--ink); text-decoration: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .toc-sheet a:last-child { border-bottom: 0; }
 }
 
 /* ---------- 本期异常 ---------- */
@@ -2538,6 +2591,93 @@ footer a:hover { text-decoration: underline; }
     host.innerHTML = '<div class="letter-body">' + letter.html + '</div>';
   }
 
+/* ---------------- 板块导航 ---------------- */
+
+  function buildToc() {
+    const sections = Array.from(document.querySelectorAll("main > section")).filter((item) =>
+      item.querySelector(".section-head h2")
+    );
+    if (!sections.length) return;
+
+    // 桌面目录放在右侧约 100px 的空隙里，标题太长会压住内容 —— 这里用短名；
+    // 手机抽屉里仍显示全称。
+    const SHORT = {
+      "盈利能力与经营质量": "盈利能力",
+      "偿债能力（有息负债）": "偿债能力",
+      "季度视图（TTM）": "季度视图",
+      "数据质量与口径": "数据质量",
+    };
+    const titles = sections.map((section, i) => {
+      section.id = `sec-${i + 1}`;
+      const full = section.querySelector(".section-head h2").textContent.trim();
+      return { id: section.id, title: full, short: SHORT[full] || full };
+    });
+
+    // 桌面：右侧吸顶目录
+    const nav = document.createElement("nav");
+    nav.className = "toc";
+    nav.setAttribute("aria-label", "板块导航");
+    nav.innerHTML = titles.map((item) => `<a href="#${item.id}">${esc(item.short)}</a>`).join("");
+    document.body.appendChild(nav);
+
+    // 手机：浮动按钮 + 抽屉
+    const fab = document.createElement("button");
+    fab.type = "button";
+    fab.className = "toc-fab";
+    fab.textContent = "目录";
+    fab.setAttribute("aria-label", "打开板块目录");
+    document.body.appendChild(fab);
+
+    const sheet = document.createElement("div");
+    sheet.className = "toc-sheet";
+    sheet.hidden = true;
+    sheet.innerHTML = `<div class="toc-sheet-inner">
+        <div class="toc-sheet-head"><span>板块目录</span><button type="button" class="toc-close" aria-label="关闭">×</button></div>
+        ${titles.map((item) => `<a href="#${item.id}">${esc(item.title)}</a>`).join("")}
+      </div>`;
+    document.body.appendChild(sheet);
+
+    const closeSheet = () => {
+      sheet.hidden = true;
+      fab.classList.remove("is-open");
+    };
+    fab.addEventListener("click", () => {
+      sheet.hidden = !sheet.hidden;
+      fab.classList.toggle("is-open", !sheet.hidden);
+    });
+    sheet.addEventListener("click", (event) => {
+      if (event.target === sheet || event.target.closest(".toc-close") || event.target.closest("a")) closeSheet();
+    });
+
+    // 点击跳转，自动避开采纳控制条的高度
+    const topOffset = () => (document.querySelector(".controls")?.offsetHeight || 0) + 12;
+    document.querySelectorAll(".toc a, .toc-sheet a").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        const target = document.getElementById(link.getAttribute("href").slice(1));
+        if (!target) return;
+        event.preventDefault();
+        window.scrollTo({
+          top: target.getBoundingClientRect().top + window.scrollY - topOffset(),
+          behavior: "smooth",
+        });
+        history.replaceState(null, "", link.getAttribute("href"));
+      });
+    });
+
+    // 滚动时高亮当前板块
+    const links = Array.from(nav.querySelectorAll("a"));
+    const spy = () => {
+      const line = window.scrollY + topOffset() + 48;
+      let active = 0;
+      sections.forEach((section, i) => {
+        if (section.offsetTop <= line) active = i;
+      });
+      links.forEach((link, i) => link.classList.toggle("is-active", i === active));
+    };
+    window.addEventListener("scroll", spy, { passive: true });
+    spy();
+  }
+
   /* ---------------- 渲染：本期异常 ---------------- */
 
   const OUTLIER_KINDS = new Set(["pct", "times", "days"]);
@@ -2706,6 +2846,7 @@ footer a:hover { text-decoration: underline; }
     renderQuality();
     renderLetter();
     renderJudgments();
+    buildToc();
     bindZoom();
 
     document.querySelectorAll("[data-tab]").forEach((button) => {
