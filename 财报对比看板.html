@@ -323,6 +323,26 @@ section { margin-bottom: 30px; }
   .section-note { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 }
 
+/* ---------- 页头观点钩子 ---------- */
+.hero-hook {
+  display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  margin-top: 12px; padding: 7px 12px; border-radius: 8px;
+  background: rgba(143, 184, 245, .12);
+  border: 1px solid rgba(143, 184, 245, .28);
+  text-decoration: none; max-width: 100%;
+}
+.hero-hook:hover { background: rgba(143, 184, 245, .18); }
+.hero-hook-label {
+  font-size: 10.5px; letter-spacing: .08em; color: #8fb8f5;
+  border-right: 1px solid rgba(143, 184, 245, .35); padding-right: 8px; flex: none;
+}
+.hero-hook-text { font-size: 13px; color: #dbe6f7; line-height: 1.6; }
+.hero-hook-text::after { content: " →"; color: #8fb8f5; }
+@media (max-width: 620px) {
+  .hero-hook { padding: 6px 10px; }
+  .hero-hook-text { font-size: 12.5px; }
+}
+
 /* ---------- 板块导航 ---------- */
 .toc {
   position: fixed; right: 8px; top: 50%; transform: translateY(-50%);
@@ -722,6 +742,10 @@ footer a:hover { text-decoration: underline; }
       <p class="eyebrow">Public Filing Dashboard</p>
       <h1 id="doc-title">财报对比看板</h1>
       <p class="hero-sub" id="doc-sub"></p>
+      <a class="hero-hook" id="hero-hook" href="#letter" hidden>
+        <span class="hero-hook-label">本期观点</span>
+        <span class="hero-hook-text" id="hero-hook-text"></span>
+      </a>
     </div>
     <div class="hero-meta" id="hero-meta"></div>
   </div>
@@ -755,15 +779,6 @@ footer a:hover { text-decoration: underline; }
       <span class="section-note">自动找最偏离同行的一项；异常不等于坏</span>
     </div>
     <div class="card" id="outliers"></div>
-  </section>
-
-  <section>
-    <div class="section-head">
-      <h2>年度观察</h2>
-      <span class="section-note">每年年报季后写一封，定稿不改；最新：<span id="letter-meta"></span></span>
-      </span>
-    </div>
-    <div class="card letter" id="letter"></div>
   </section>
 
   <section>
@@ -981,6 +996,14 @@ footer a:hover { text-decoration: underline; }
         <table id="val-table"></table>
       </div>
     </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>年度观察</h2>
+      <span class="section-note">每年年报季后写一封，定稿不改；最新：<span id="letter-meta"></span></span>
+    </div>
+    <div class="card letter" id="letter"></div>
   </section>
 
   <section>
@@ -2589,6 +2612,23 @@ footer a:hover { text-decoration: underline; }
     }
     if (meta) meta.textContent = letter.period + ' 年度 ｜ 写于 ' + (letter.written || '—');
     host.innerHTML = '<div class="letter-body">' + letter.html + '</div>';
+
+    // 页头钩子：把信里的大标题（去掉期号）做成一行可点的观点
+    const hook = document.querySelector('#hero-hook');
+    const hookText = document.querySelector('#hero-hook-text');
+    const title = letter.html.match(/<h2>(.*?)<\/h2>/);
+    if (hook && hookText && title) {
+      hookText.textContent = title[1].replace(/^\d{4}[：:]\s*/, '');
+      hook.hidden = false;
+      hook.addEventListener('click', (event) => {
+        event.preventDefault();
+        const target = document.querySelector('#letter');
+        if (!target) return;
+        const offset = (document.querySelector('.controls')?.offsetHeight || 0) + 12;
+        window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' });
+        history.replaceState(null, '', '#letter');
+      });
+    }
   }
 
 /* ---------------- 板块导航 ---------------- */
