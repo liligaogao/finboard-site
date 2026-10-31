@@ -826,8 +826,8 @@ footer a:hover { text-decoration: underline; }
     <div class="grid grid-2">
       <div class="card chart-card">
         <div class="chart-head">
-          <h3 class="chart-title">合资投资收益 / 营收</h3>
-          <span class="chart-hint">越高越依赖合资公司</span>
+          <h3 class="chart-title">合资投资收益 / 营收 · 五年</h3>
+          <span class="chart-hint">越高越依赖合资</span>
         </div>
         <div class="chart-box" id="profit-joint"></div>
       </div>
@@ -1891,10 +1891,22 @@ footer a:hover { text-decoration: underline; }
     const companies = activeCompanies();
     const rowOf = (c) => getRow(c.code, state.year) || {};
 
-    const jointItems = companies
-      .map((c) => ({ label: c.name, value: rowOf(c).joint_income_ratio }))
-      .sort((a, b) => (b.value ?? -1e9) - (a.value ?? -1e9));
-    drawHBars($("#profit-joint"), jointItems, { label: "合资投资收益 / 营收", suffix: "%" });
+    // 用已有字段画五年趋势，替换原来的当年条形图（当年数值表格里还有）——
+    // 趋势能看到"合资红利是怎么一年年消失的"，当年快照看不到。
+    const jointSeries = companies.map((c) => ({
+      name: c.name,
+      color: c.color,
+      values: YEARS.map((year) => (getRow(c.code, year) || {}).joint_income_ratio),
+    }));
+    const jointMedian = medianSeries("joint_income_ratio");
+    if (jointMedian) jointSeries.push(jointMedian);
+    lineChart($("#profit-joint"), jointSeries, {
+      kind: "pct",
+      scale: "symlog",
+      label: "合资投资收益 / 营收",
+      height: 210,
+      tickCount: 3,
+    });
 
     const financeItems = companies
       .map((c) => ({ label: c.name, value: rowOf(c).finance_ratio }))
