@@ -343,6 +343,39 @@ section { margin-bottom: 30px; }
   .hero-hook-text { font-size: 12.5px; }
 }
 
+/* ---------- 季度热力条 ---------- */
+.quarter-heat { padding: 6px 18px 18px; overflow-x: auto; }
+.heat-grid {
+  display: grid; gap: 2px; min-width: 520px;
+  align-items: center;
+}
+.heat-head {
+  font-size: 10px; color: var(--faint); text-align: center;
+  letter-spacing: .01em; padding-bottom: 4px; white-space: nowrap;
+}
+.heat-name {
+  font-size: 11.5px; color: var(--ink-2); font-weight: 600;
+  padding-right: 8px; white-space: nowrap; display: flex; align-items: center; gap: 5px;
+}
+.heat-name i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.heat-cell {
+  height: 26px; border-radius: 3px; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-variant-numeric: tabular-nums; color: #fff; font-weight: 600;
+}
+.heat-cell.is-empty { background: #f1f5f9; }
+.heat-cell.is-light { color: #0f1b2d; }
+.heat-cell.is-dim { color: rgba(255,255,255,.75); font-weight: 500; }
+.heat-trend {
+  font-size: 11px; text-align: right; padding-left: 8px; white-space: nowrap;
+  font-variant-numeric: tabular-nums; color: var(--muted);
+}
+.heat-trend b { color: #b91c1c; }
+@media (max-width: 620px) {
+  .quarter-heat { padding: 4px 12px 14px; }
+  .heat-cell { height: 22px; font-size: 9px; }
+  .heat-grid { min-width: 460px; }
+}
+
 /* ---------- 板块导航 ---------- */
 .toc {
   position: fixed; right: 8px; top: 50%; transform: translateY(-50%);
@@ -869,6 +902,13 @@ footer a:hover { text-decoration: underline; }
         </div>
         <div class="chart-box" id="chart-q-single"></div>
       </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="chart-head" style="padding:16px 18px 4px">
+        <h3 class="chart-title">单季净利率热力条</h3>
+        <span class="chart-hint">最近 12 期，颜色越深越极端</span>
+      </div>
+      <div class="quarter-heat" id="quarter-heat"></div>
     </div>
     <div class="card" style="margin-top:14px">
       <div class="table-wrap">
@@ -1961,6 +2001,83 @@ footer a:hover { text-decoration: underline; }
     if (host) host.innerHTML = `<thead>${head}</thead><tbody>${body}</tbody>`;
   }
 
+/* ---------------- 渲染：季度热力条 ---------------- */
+
+  const HEAT_COLORS = { up: [15, 118, 110], down: [185, 28, 28] };
+
+  function renderQuarterHeat() {
+    const host = $("#quarter-heat");
+    if (!host) return;
+    const periods = (DATA.meta.quarters || []).slice(-12);
+    if (!periods.length) return;
+    const companies = activeCompanies();
+
+    // 每一期里绝对值最大的净利率，用来定颜色深浅（跨公司可比）
+    const peak = Math.max(
+      4,
+      ...periods.flatMap((period) =>
+        companies.map((c) => Math.abs(heatValue(c.code, period) ?? 0))
+      )
+    );
+
+    const cols = `grid-template-columns: 74px repeat(${periods.length}, minmax(0, 1fr)) 74px`;
+    const head = ['<div></div>']
+      .concat(periods.map((period) => `<div class="heat-head">${esc(period.slice(2))}</div>`))
+      .concat(['<div class="heat-head">连续恶化</div>'])
+      .join("");
+
+    const rows = companies.map((company) => {
+      const cells = periods
+        .map((period) => {
+          const value = heatValue(company.code, period);
+          if (value == null) return '<div class="heat-cell is-empty"></div>';
+          const [r, g, b] = value >= 0 ? HEAT_COLORS.up : HEAT_COLORS.down;
+          const alpha = 0.18 + 0.78 * Math.min(Math.abs(value) / peak, 1);
+          // 浅色格用深色字，否则白字在淡底上看不清
+          const tone = alpha < 0.55 ? " is-light" : "";
+          const qoq = heatQoQ(company.code, period, periods);
+          const tip = `${period} 单季净利率 ${value.toFixed(2)}%` + (qoq == null ? "" : `（环比 ${qoq > 0 ? "+" : ""}${qoq.toFixed(2)}pp）`);
+          return `<div class="heat-cell${tone}" style="background:rgba(${r},${g},${b},${alpha.toFixed(2)})" title="${esc(tip)}">${value.toFixed(1)}</div>`;
+        })
+        .join("");
+      const streak = declineStreak(company.code, periods);
+      return `<div class="heat-name"><i style="background:${company.color}"></i>${esc(company.name)}</div>${cells}<div class="heat-trend">${streak >= 2 ? `<b>${streak} 季</b>` : streak === 1 ? "1 季" : "—"}</div>`;
+    });
+
+    host.innerHTML = `<div class="heat-grid" style="${cols}">${head}${rows.join("")}</div>`;
+  }
+
+  function heatValue(code, period) {
+    const row = (DATA.quarterly || []).find((item) => item.code === code && item.period === period);
+    const value = row ? row.net_margin_single : null;
+    return value == null || !isFinite(value) ? null : value;
+  }
+
+  function heatQoQ(code, period, periods) {
+    const index = periods.indexOf(period);
+    if (index <= 0) return null;
+    const current = heatValue(code, period);
+    const previous = heatValue(code, periods[index - 1]);
+    if (current == null || previous == null) return null;
+    return current - previous;
+  }
+
+  // 从这家公司自己的最新可用期往回数，单季净利率连续下滑了几个季度
+  // （各家披露节奏不同，全局最后几期常是空的，所以不能从 periods.length-1 起数）
+  function declineStreak(code, periods) {
+    let streak = 0;
+    let last = periods.length - 1;
+    while (last > 0 && heatValue(code, periods[last]) == null) last -= 1;
+    for (let i = last; i > 0; i -= 1) {
+      const current = heatValue(code, periods[i]);
+      const previous = heatValue(code, periods[i - 1]);
+      if (current == null || previous == null) break;
+      if (current < previous) streak += 1;
+      else break;
+    }
+    return streak;
+  }
+
   /* ---------------- 渲染：利润结构 ---------------- */
 
   function renderProfitStructure() {
@@ -2883,6 +3000,7 @@ footer a:hover { text-decoration: underline; }
     renderMetricSelect();
     renderTabs();
     renderTables();
+    renderQuarterHeat();
     renderQuality();
     renderLetter();
     renderJudgments();
