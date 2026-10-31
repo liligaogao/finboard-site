@@ -2492,7 +2492,13 @@ footer a:hover { text-decoration: underline; }
   }
 
   function renderMetricSelect() {
-    const options = COMPARE_ROWS.concat(["gross_profit", "total_liabilities", "rd_expense", "operating_revenue"])
+    // 横向对比表只放 20 个核心指标（放了会超页面高度预算），
+    // 但「时间序列」是一张表的行，不占高度 —— 所以下拉给全部可见指标：
+    // 先按对比表的顺序（核心在前），再把其余指标接在后面。
+    const visible = Object.keys(DATA.metrics);
+    const ordered = COMPARE_ROWS.concat(visible.filter((key) => !COMPARE_ROWS.includes(key)));
+    const options = ordered
+      .concat(["gross_profit", "total_liabilities", "rd_expense", "operating_revenue"])
       .filter((key, i, arr) => arr.indexOf(key) === i && DATA.metrics[key])
       .map((key) => `<option value="${key}" ${key === state.metric ? "selected" : ""}>${esc(DATA.metrics[key].name)}</option>`)
       .join("");
@@ -3165,9 +3171,13 @@ footer a:hover { text-decoration: underline; }
         renderTables();
       });
     });
+    // 选指标 = 想看这个指标的五年走势，所以自动切到「时间序列」页签
+    // （以前只在时间序列页签下才生效，在横向对比页选它毫无反应）
     $("#metric-select").addEventListener("change", (event) => {
       state.metric = event.target.value;
-      if (state.tab === "series") renderSeriesTable();
+      state.tab = "series";
+      renderTabs();
+      renderTables();
     });
   }
 
